@@ -8,11 +8,29 @@ Spree::CheckoutController.class_eval do
   
   def set_addresses
     return unless params[:order] && params[:state] == "address"
-    
+
+    @bill_address = current_user.addresses.build(permit_address_params(params[:order][:bill_address_attributes])).check
+    unless @bill_address.save
+      flash[:error] = @bill_address.errors.full_messages.join("\n")
+      redirect_to(checkout_state_path(@order.state)) && return
+    end
+    params[:order][:bill_address_id] = @bill_address.id
+
+    if params[:order][:use_billing]
+      params[:order][:ship_address_id] = @bill_address.id
+    else
+      @ship_address = current_user.addresses.build(permit_address_params(params[:order][:ship_address_attributes])).check
+      unless @ship_address.save
+        flash[:error] = @ship_address.errors.full_messages.join("\n")
+        redirect_to(checkout_state_path(@order.state)) && return
+      end
+      params[:order][:ship_address_id] = @ship_address.id
+    end
+
     if params[:order][:ship_address_id].to_i > 0
       params[:order].delete(:ship_address_attributes)
 
-      Spree::Address.find(params[:order][:ship_address_id]).user_id != spree_current_user.id && raise("Frontend address forging")
+      Spree::Address.find(params[:order][:ship_address_id]).user_id != current_user.id && raise("Frontend address forging")
     else
       params[:order].delete(:ship_address_id)
     end
@@ -20,7 +38,7 @@ Spree::CheckoutController.class_eval do
     if params[:order][:bill_address_id].to_i > 0
       params[:order].delete(:bill_address_attributes)
 
-      Spree::Address.find(params[:order][:bill_address_id]).user_id != spree_current_user.id && raise("Frontend address forging")
+      Spree::Address.find(params[:order][:bill_address_id]).user_id != current_user.id && raise("Frontend address forging")
     else
       params[:order].delete(:bill_address_id)
     end
@@ -43,5 +61,20 @@ Spree::CheckoutController.class_eval do
     end
 
     ship_address.update_attribute(:user_id, spree_current_user.try(:id))
+  end
+
+  private
+
+  def permit_address_params(params)
+    params.permit(:address,
+                  :firstname,
+                  :lastname,
+                  :address1,
+                  :address2,
+                  :city,
+                  :state_id,
+                  :zipcode,
+                  :country_id,
+                  :phone)
   end
 end

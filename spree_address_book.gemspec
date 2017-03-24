@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
 
   spree_version = '>= 3.1.0', '< 4.0'
   s.add_runtime_dependency 'spree_core', spree_version
-  s.add_runtime_dependency 'spree_auth_devise', spree_version
+  # s.add_runtime_dependency 'spree_auth_devise', spree_version
 
   s.add_development_dependency 'rspec-rails'
   s.add_development_dependency 'sqlite3'
