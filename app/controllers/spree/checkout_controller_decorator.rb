@@ -9,16 +9,20 @@ Spree::CheckoutController.class_eval do
   def set_addresses
     return unless params[:order] && params[:state] == "address"
 
-    @bill_address = current_user.addresses.build(permit_address_params(params[:order][:bill_address_attributes])).check
-    unless @bill_address.save
-      flash[:error] = @bill_address.errors.full_messages.join("\n")
-      redirect_to(checkout_state_path(@order.state)) && return
-    end
-    params[:order][:bill_address_id] = @bill_address.id
+    if params[:order][:bill_address_id].to_i == 0 || params[:order][:bill_address_id].nil?
+      @bill_address = current_user.addresses.build(permit_address_params(params[:order][:bill_address_attributes])).check
+      unless @bill_address.save
+        flash[:error] = @bill_address.errors.full_messages.join("\n")
+        redirect_to(checkout_state_path(@order.state)) && return
+      end
+      params[:order][:bill_address_id] = @bill_address.id
 
-    if params[:order][:use_billing]
-      params[:order][:ship_address_id] = @bill_address.id
-    else
+      if params[:order][:use_billing]
+        params[:order][:ship_address_id] = @bill_address.id
+      end
+    end
+
+    if params[:order][:use_billing].nil? && (params[:order][:ship_address_id].to_i == 0 || params[:order][:ship_address_id].nil?)
       @ship_address = current_user.addresses.build(permit_address_params(params[:order][:ship_address_attributes])).check
       unless @ship_address.save
         flash[:error] = @ship_address.errors.full_messages.join("\n")
@@ -34,7 +38,7 @@ Spree::CheckoutController.class_eval do
     else
       params[:order].delete(:ship_address_id)
     end
-    
+
     if params[:order][:bill_address_id].to_i > 0
       params[:order].delete(:bill_address_attributes)
 
@@ -42,7 +46,7 @@ Spree::CheckoutController.class_eval do
     else
       params[:order].delete(:bill_address_id)
     end
-    
+
   end
 
   def normalize_addresses
