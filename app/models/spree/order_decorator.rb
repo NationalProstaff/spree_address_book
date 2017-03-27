@@ -59,6 +59,10 @@ Spree::Order.class_eval do
       self.ship_address = user.ship_address if !self.ship_address_id && user.ship_address.try(:valid?) && self.checkout_steps.include?("delivery")
     end
   end
+
+  def persist_user_address!
+    nil
+  end
   
   #set_callback :updating_from_params, :before, :update_addresses_params
 
