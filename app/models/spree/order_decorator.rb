@@ -3,7 +3,7 @@
 ]).flatten!
 
 Spree::Order.class_eval do
-  before_validation :clone_shipping_address, :if => "Spree::AddressBook::Config[:disable_bill_address]"
+  before_validation :clone_shipping_address, if: -> { Spree::AddressBook::Config[:disable_bill_address].present? }
   
   def clone_shipping_address
     if self.ship_address
